@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Elastifile Cloud File System
+Parameters:
+  KeyName:
+    Description: EC2 Instance SSH Key
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  VpcId:
+    Description: Choose VPC
+    Type: 'AWS::EC2::VPC::Id'
+  Subnets:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description: SubnetIds in your Virtual Private Cloud (VPC).
+  InstanceType:
+    Description: EC2 instance specs configuration
+    Type: String
+    Default: t2.xlarge
+    AllowedValues:
+      - t2.xlarge
+Mappings:
+  AMIs:
+    us-east-1:
+      Name: ami-9ae454e5
+    us-west-1:
+      Name: ami-07d09744385fa1389
+    us-west-2:
+      Name: ami-07d09744385fa1389
+Resources:
+  ECFSSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow SSH/HTTPS from anywhere, Allow all internal traffic
+      VpcId: !Ref VpcId
+
+  ECFSIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ECFSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+
+  ECFSIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ECFSSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+
+  ECFSIngress3:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ECFSSecurityGroup
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref ECFSSecurityGroup
+
+  ElastifileProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref ElastifileRole
+
+  ElastifileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - ec2.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonEC2FullAccess'
+
+  EManageInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 100
+            VolumeType: gp2
+      InstanceType: t2.xlarge
+      ImageId: !FindInMap
+        - AMIs
+        - !Ref 'AWS::Region'
+        - Name
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref ElastifileProfile
+      Monitoring: true
+      SecurityGroupIds:
+        - !Ref ECFSSecurityGroup
+      SubnetId: !Ref Subnets
+      Tags:
+        - Key: Name
+          Value: Elastifile-eManage
+
+  EManageElasticIp:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      InstanceId: !Ref EManageInstance
+      Domain: vpc
+
+Outputs:
+  EmanagePubURL:
+    Description: eManage web public URL
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - EManageInstance
+          - PublicDnsName
+  EmanagePubIPURL:
+    Description: eManage web public IP
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - EManageInstance
+          - PublicIp
+  EmanagePubIP:
+    Description: eManage Instance public IP
+    Value: !Ref PublicIp
+  EmanagePrivateURL:
+    Description: eManage web private URL
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - EManageInstance
+          - PrivateIp
+  EmanageInstanceID:
+    Description: eManage Instance ID
+    Value: !Ref EManageInstance
+  EmanageSSH:
+    Description: eManage ssh
+    Value: !Join
+      - ''
+      - - ssh centos@
+        - !GetAtt
+          - EManageInstance
+          - PublicDnsName
+        - ' -i '
+        - !Ref KeyName
+        - .pem
