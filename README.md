@@ -1,4 +1,6 @@
-# Automate Elastifile ECFS with REST
+# Automate Elastifile ECFS via REST API
+
+REST calls are HTTPS (443) to the public IP of EMS. Ensure project firewall/security group rules allow 443 (ingress) from wherever these are run.
 
 ## Components:
 

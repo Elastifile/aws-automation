@@ -87,8 +87,6 @@ function add_capacity {
   else
     create_instances $NUM_OF_VMS
     job_status "create_instances_job"
-    echo "Start cluster deployment\n" | tee -a $LOG
-    job_status "activate_emanage_job"
   fi
 }
 

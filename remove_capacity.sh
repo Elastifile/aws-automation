@@ -46,7 +46,7 @@ echo "EMS_NAME: $EMS_NAME" | tee -a $LOG
 echo "EMS_HOSTNAME: $EMS_HOSTNAME" | tee -a $LOG
 echo "NUM_OF_VMS: $NUM_OF_VMS" | tee -a $LOG
 
-set -x
+#set -x
 
 #establish https session
 function establish_session {
@@ -55,15 +55,17 @@ curl -k -D $SESSION_FILE -H "Content-Type: application/json" -X POST -d '{"user"
 }
 
 function remove_enode {
-  curl -k -b $SESSION_FILE --request DELETE --url "https://$EMS_ADDRESS/api/hosts/$1" >> $LOG 2>&1
+  curl -k -b $SESSION_FILE -H "Content-Type: application/json" -X DELETE -d '{"async":true}' https://$EMS_ADDRESS/api/enodes/$1 >> $LOG 2>&1
 }
 
 function job_status {
   while true; do
-    STATUS=`curl -k -s -b $SESSION_FILE --request GET --url "https://$EMS_ADDRESS/api/control_tasks/recent?task_type=$1" | grep status | cut -d , -f 7 | cut -d \" -f 4`
+    STATUS=`curl -k -s -b $SESSION_FILE --request GET --url "https://$EMS_ADDRESS/api/control_tasks/recent?task_name=$1" | grep status | cut -d , -f 7 | cut -d \" -f 4`
     echo -e  "$1 : $STATUS " | tee -a $LOG
     if [[ $STATUS == "success" ]]; then
       echo -e "$1 Complete! \n" | tee -a $LOG
+      #incref enode ID to remove
+      num=`cat enodes.txt`; ((num=num+1)); echo $num > enodes.txt
       sleep 5
       break
     fi
@@ -80,10 +82,8 @@ function remove_capacity {
   if [[ $NUM_OF_VMS == 0 ]]; then
     echo -e "0 VMs specified, skipping\n"
   else
-    #incref enode ID to remove
-    num=`cat enodes.txt`; ((num=num+1)); echo $num > enodes.txt
     remove_enode `cat enodes.txt`
-    job_status "Remove"
+    job_status "remove"
   fi
 }
 
