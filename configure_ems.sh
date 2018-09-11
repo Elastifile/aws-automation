@@ -169,6 +169,10 @@ function change_password {
   establish_session $PASSWORD
 }
 
+function reset_enodes_count {
+  echo "" > enodes.txt
+}
+
 # Main
 if [ "$AUTOMATED" = "true" ]; then
   check_ems_ready
@@ -177,3 +181,4 @@ setup_ems
 add_capacity
 create_data_container
 change_password
+reset_enodes_count

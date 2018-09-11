@@ -46,7 +46,7 @@ echo "EMS_NAME: $EMS_NAME" | tee -a $LOG
 echo "EMS_HOSTNAME: $EMS_HOSTNAME" | tee -a $LOG
 echo "NUM_OF_VMS: $NUM_OF_VMS" | tee -a $LOG
 
-set -x
+#set -x
 
 #establish https session
 function establish_session {
