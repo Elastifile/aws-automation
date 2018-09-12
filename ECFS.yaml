@@ -125,9 +125,6 @@ Outputs:
         - !GetAtt
           - EManageInstance
           - PublicIp
-  EmanagePubIP:
-    Description: eManage Instance public IP
-    Value: !Ref PublicIp
   EmanagePrivateURL:
     Description: eManage web private URL
     Value: !Join

@@ -170,7 +170,7 @@ function change_password {
 }
 
 function reset_enodes_count {
-  echo "" > enodes.txt
+  echo "1" > enodes.txt
 }
 
 # Main
