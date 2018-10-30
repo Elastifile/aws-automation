@@ -91,4 +91,5 @@ function add_capacity {
 }
 
 # Main
+establish_session $PASSWORD
 add_capacity
